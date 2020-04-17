@@ -6,3 +6,4 @@ Exercises for the [AI for Robotics](https://classroom.udacity.com/courses/cs373)
 1. Histogram filter
 2. Kalman filter
 3. Particle filter
+4. Search (path planning)
