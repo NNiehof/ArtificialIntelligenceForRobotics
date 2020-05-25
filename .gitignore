@@ -1,2 +1,3 @@
-scratch.py
+scratch.*
 .vscode
+*__pycache__*
