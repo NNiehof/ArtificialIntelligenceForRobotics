@@ -42,7 +42,7 @@ class Kalman:
        
         # variance estimate (variances along the diagonal)
         self.P = np.zeros((dim, dim))
-        for i, v in enumerate(kwargs.get('var', [100] * dim)):
+        for i, v in enumerate(kwargs.get('var', [1000] * dim)):
             self.P[i, i] = v
         
         # state transition matrix
