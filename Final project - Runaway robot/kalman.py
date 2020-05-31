@@ -4,20 +4,24 @@ import numpy as np
 class Kalman:
     """
     Kalman filter for estimating location on a 2D plane.
-    Location predictions are made in 4 dimensions: positions x and y (observed),
-    and velocities dx and dy (unobserved).
+    Location predictions are made in 2 positional dimensions: x and y (observed).
+    Velocities dx and dy and optional further derivatives are unobserved,
+    but included as dimensions in the model.
 
     Args:
-        loc (array of int or float): initial location estimate [x, y].
+        loc (array of int or float): array that contains the initial location
+        estimates x and y, followed by any number of derivative terms.
+        The estimates for derivatives may be set to zeros, for example
+        `[x, y, 0, 0]` for a model with x, y, dx and dy.
+        The length of this array will dictate the dimensionality of the
+        Kalman filter. The above example will result in a 4D model.
 
     Optional args:
-        vel (array of int or float): initial velocity estimate [dx, dy].
-            Default is zeros.
         var (array of int or float): initial variance estimate for location
             of size `dim`, where `dim` is the number of dimensions in the
             model.
-            `dim` = 4 for the 2D case.
-            Default is [0, 0, 1000, 1000] (no location error, large velocity
+            Default is 0 for the position terms (no location error), and 1000
+            for derivative terms.
             error).
         dt (int or float): time step between states. Default is 1.
         motion_err (array of int or float): displacement effect by an unknown
@@ -30,23 +34,25 @@ class Kalman:
     """      
 
     def __init__(self, loc, **kwargs):
-        # number of model dimensions (x, y, dx, dy)
-        dim = 4
+        # number of model dimensions
+        dim = len(loc)
 
-        vel = kwargs.get('vel', [0, 0])
         # location estimate
-        self.w = np.array([[loc[0]], [loc[1]], [vel[0]], [vel[1]]])
-        
+        self.w = np.array(loc).reshape((dim, 1))
+       
         # variance estimate (variances along the diagonal)
         self.P = np.zeros((dim, dim))
-        for i, v in enumerate(kwargs.get('var', [0, 0, 1000, 1000])):
+        for i, v in enumerate(kwargs.get('var', [100] * dim)):
             self.P[i, i] = v
         
         # state transition matrix
-        self.A = np.eye(dim, dim)
+        self.A = np.zeros((dim, dim))
         dt = kwargs.get('dt', 1)
-        self.A[0, 2] = dt
-        self.A[1, 3] = dt
+        # set all dt diagonals for the derivative terms. 
+        for i in range(dim):
+            for j in range(0, dim, 2):
+                if (i + j) < dim:
+                    self.A[i, (i + j)] = dt**(j / 2)
 
         # Extraction matrix (measurement function) maps states to
         # measurements. Size m x dim. Here, m = 2 because x and y
